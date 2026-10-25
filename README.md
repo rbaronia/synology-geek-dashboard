@@ -9,6 +9,35 @@ A real-time, high-density telemetry dashboard and security hardening advisor for
 
 ---
 
+## 📸 Screenshots
+
+### 🚀 Mission Control Telemetry HUD
+![Synology Mission Control HUD](static/dashboard-preview.png)
+
+### 🛡️ Security & Hardening Advisor
+![Synology Security & Hardening Advisor](static/security-advisor-preview.png)
+
+---
+
+## 🖥️ Tested Hardware & DSM Compatibility
+
+This dashboard has been extensively benchmarked and validated on production Synology DiskStation hardware:
+
+| Component | Tested Specifications |
+| :--- | :--- |
+| **Hardware Model** | **Synology DiskStation DS920+** (4-Bay Desktop NAS) |
+| **Processor (CPU)** | Intel Celeron J4125 (4 Cores / 4 Threads @ 2.0 GHz base, 2.7 GHz burst) |
+| **System Memory (RAM)** | 4096 MB DDR4 Non-ECC |
+| **Storage Architecture** | 2x Seagate IronWolf 10TB (`ST10000VN0008`) in Synology Hybrid RAID (SHR) / Btrfs |
+| **DSM Firmware Tested** | **DSM 7.3.2-86009 Update 5** (and validated on **DSM 7.2.2 / 7.2.1 / 7.1.x**) |
+| **Network Interfaces** | Dual 1GbE Gigabit LAN (`eth0`, `eth1`) with Link Aggregation / Synology DDNS & QuickConnect |
+
+### 🧩 Compatibility Matrix
+- **Supported DSM Versions**: Synology **DSM 7.0**, **DSM 7.1**, **DSM 7.2**, **DSM 7.2.2**, and **DSM 7.3.x**.
+- **Supported Architectures**: x86_64 (Intel/AMD) and ARM64/ARMv8 models (e.g. Plus Series `DS220+`, `DS420+`, `DS720+`, `DS920+`, `DS1520+`, `DS1621+`, `DS1821+`, `DS923+`, `DS224+`, `DS423+`, `RS1221+`, etc.).
+
+---
+
 ## ⚡ Features
 
 ### 🖥️ Real-Time Hardware & Kernel Telemetry

@@ -2648,6 +2648,14 @@
       });
     });
 
+    // Deep linking tab from URL query param (e.g. ?tab=security)
+    const urlParams = new URLSearchParams(window.location.search);
+    const initialTab = urlParams.get('tab');
+    if (initialTab) {
+      const targetBtn = document.querySelector(`.nav-tab-btn[data-tab="${initialTab}"]`);
+      if (targetBtn) targetBtn.click();
+    }
+
     // Theme selector
     const themeSelect = document.getElementById('theme-select');
     if (themeSelect) {

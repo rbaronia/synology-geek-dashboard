@@ -9,6 +9,7 @@ from typing import Any
 from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import HTMLResponse
+from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
 from synology_client import SynologyClient
@@ -43,6 +44,7 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(title="Synology NAS Supercharged Geek Dashboard", lifespan=lifespan)
+app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
 
 
