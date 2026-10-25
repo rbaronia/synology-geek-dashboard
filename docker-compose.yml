@@ -1,0 +1,17 @@
+version: '3.8'
+
+services:
+  nas-dashboard:
+    build: .
+    container_name: synology-dashboard
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      - NAS_HOST=10.0.0.91 # or host.docker.internal / 172.17.0.1
+      - NAS_PORT=5001
+      - NAS_USER=api-user
+      - NAS_PASS=${NAS_PASS}
+      - NAS_VERIFY_SSL=false
+    # Optional: use host networking so it accesses localhost:5001 directly
+    # network_mode: host
