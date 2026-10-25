@@ -8,10 +8,10 @@ services:
     ports:
       - "8000:8000"
     environment:
-      - NAS_HOST=10.0.0.91 # or host.docker.internal / 172.17.0.1
-      - NAS_PORT=5001
-      - NAS_USER=api-user
+      - NAS_HOST=${NAS_HOST:-192.168.1.100} # or host.docker.internal / 172.17.0.1
+      - NAS_PORT=${NAS_PORT:-5001}
+      - NAS_USER=${NAS_USER:-admin}
       - NAS_PASS=${NAS_PASS}
-      - NAS_VERIFY_SSL=false
+      - NAS_VERIFY_SSL=${NAS_VERIFY_SSL:-false}
     # Optional: use host networking so it accesses localhost:5001 directly
     # network_mode: host

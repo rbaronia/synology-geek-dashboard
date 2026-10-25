@@ -15,7 +15,7 @@ from synology_client import SynologyClient
 
 load_dotenv()
 
-NAS_HOST = os.getenv("NAS_HOST", "10.0.0.91")
+NAS_HOST = os.getenv("NAS_HOST", "127.0.0.1")
 NAS_PORT = int(os.getenv("NAS_PORT", "5001"))
 NAS_USER = os.getenv("NAS_USER", "admin")
 NAS_PASS = os.getenv("NAS_PASS", "")
@@ -44,6 +44,16 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(title="Synology NAS Supercharged Geek Dashboard", lifespan=lifespan)
 templates = Jinja2Templates(directory="templates")
+
+
+@app.middleware("http")
+async def add_security_headers(request: Request, call_next):
+    response = await call_next(request)
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["X-Frame-Options"] = "DENY"
+    response.headers["X-XSS-Protection"] = "1; mode=block"
+    response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+    return response
 
 
 def get_client() -> SynologyClient:

@@ -1049,13 +1049,13 @@
           <span class="geek-tag">SUPERCHARGED HUD</span>
         </h1>
         <div class="brand-meta">
-          <span id="nas-host">10.0.0.91:5001</span>
+          <span id="nas-host">192.168.1.100:5001</span>
           <span class="dot">/</span>
           <span id="dsm-version">DSM 7.3.2 Update 5</span>
           <span class="dot">/</span>
-          <span id="qc-badge" style="color:var(--cyan);">quickconnect.to/rbaronia</span>
+          <span id="qc-badge" style="color:var(--cyan);">quickconnect.to/synology-nas</span>
           <span class="dot">/</span>
-          <span id="ddns-badge" style="color:var(--emerald);">rbaronia.synology.me</span>
+          <span id="ddns-badge" style="color:var(--emerald);">nas.synology.me</span>
         </div>
       </div>
     </div>
@@ -1241,7 +1241,7 @@
         </div>
         <div class="sensor-item">
           <div class="label">External WAN</div>
-          <div class="val" id="wan-ip" style="font-size:0.82rem; color:var(--cyan);">43.230.96.119</div>
+          <div class="val" id="wan-ip" style="font-size:0.82rem; color:var(--cyan);">203.0.113.1</div>
         </div>
       </div>
 
@@ -1249,7 +1249,7 @@
         <div>Processor: <span id="hw-cores" style="color: var(--text);">Intel Celeron J4125 (4 Cores @ 2.0 GHz)</span></div>
         <div>Total Memory: <span id="hw-ram" style="color: var(--text);">4096 MB DDR4 Non-ECC</span></div>
         <div>DSM Build: <span id="hw-date" style="color: var(--text);">DSM 7.3.2-86009 Update 5</span></div>
-        <div>Default Gateway: <span id="hw-gw" style="color: var(--text);">10.0.0.1 (eth0)</span></div>
+        <div>Default Gateway: <span id="hw-gw" style="color: var(--text);">192.168.1.1 (eth0)</span></div>
       </div>
     </section>
 
@@ -1643,8 +1643,17 @@
   }
 
   // ------------------------------------------------------------------
-  // Formatting Helpers
+  // Security & Formatting Helpers
   // ------------------------------------------------------------------
+  function escapeHtml(str) {
+    if (str === null || str === undefined) return '';
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
   function fmtBytes(bytes) {
     if (!bytes && bytes !== 0) return '0 B';
     const num = Number(bytes);
@@ -1706,7 +1715,7 @@
 
     // 1. Header Information
     setText('nas-model', sys.model ? `Synology ${sys.model}` : 'Synology DS920+');
-    setText('nas-host', `${hostInfo.host || '10.0.0.91'}:${hostInfo.port || 5001}`);
+    setText('nas-host', `${hostInfo.host || '192.168.1.100'}:${hostInfo.port || 5001}`);
     setText('dsm-version', sys.firmware_ver || 'DSM 7.3.2 Update 5');
 
     if (qc.server_alias) {
@@ -1714,9 +1723,9 @@
     }
 
     const ddnsRec = ddns.records?.[0];
-    if (ddnsRec) {
-      setText('ddns-badge', ddnsRec.hostname || 'rbaronia.synology.me');
-      setText('wan-ip', ddnsRec.ip || '43.230.96.119');
+    if (ddnsRec && ddnsRec.hostname) {
+      setText('ddns-badge', ddnsRec.hostname);
+      setText('wan-ip', ddnsRec.ip || '203.0.113.1');
     }
 
     if (sys.uptime || sys.up_time) {
@@ -1845,7 +1854,7 @@
     setText('temp-d2', d2.temp ? `${d2.temp}°C` : '49°C');
     setText('hw-ram', `${(ramTotalKb/1024).toFixed(0)} MB DDR4`);
     setText('hw-date', sys.firmware_date ? `${sys.firmware_date} (Update 5)` : '2026/10/02');
-    setText('hw-gw', `${net.gateway || '10.0.0.1'} (${net.gateway_info?.ifname || 'eth0'})`);
+    setText('hw-gw', `${net.gateway || '192.168.1.1'} (${net.gateway_info?.ifname || 'eth0'})`);
     if (fan.cool_fan === 'yes') setText('fan-status-badge', 'Cool Fan Mode');
 
     // 7. Drive Bay Enclosure
@@ -1928,12 +1937,12 @@
     const shareGrid = document.getElementById('share-grid');
     if (shareGrid) {
       const shareList = shares.shares || [
-        { name: 'backup-ssd', vol_path: '/volume1' },
-        { name: 'Do-Not-Delete-VMs', vol_path: '/volume1' },
+        { name: 'backups', vol_path: '/volume1' },
+        { name: 'virtual-machines', vol_path: '/volume1' },
         { name: 'homes', vol_path: '/volume1' },
         { name: 'surveillance', vol_path: '/volume1' },
         { name: 'docker', vol_path: '/volume1' },
-        { name: 'Plex', vol_path: '/volume1' }
+        { name: 'media', vol_path: '/volume1' }
       ];
 
       const filtered = shareList.filter(s => !currentSearchQuery || s.name.toLowerCase().includes(currentSearchQuery.toLowerCase()));
@@ -1941,8 +1950,8 @@
 
       shareGrid.innerHTML = filtered.map(s => `
         <div class="share-card">
-          <span class="share-name" title="${s.name}">📁 ${s.name}</span>
-          <span style="color:var(--cyan); font-size:0.65rem;">${s.vol_path || '/vol1'}</span>
+          <span class="share-name" title="${escapeHtml(s.name)}">📁 ${escapeHtml(s.name)}</span>
+          <span style="color:var(--cyan); font-size:0.65rem;">${escapeHtml(s.vol_path || '/vol1')}</span>
         </div>
       `).join('');
     }
@@ -1957,14 +1966,14 @@
 
       nicGrid.innerHTML = netInterfaces.filter(n => n.device !== 'total').map((n, idx) => {
         const isUp = (n.device === 'eth0' || n.rx > 0 || n.tx > 0);
-        const ip = n.device === 'eth0' ? (net.gateway_info?.ip || '10.0.0.91') : (n.device === 'eth1' ? '10.0.0.92' : '--');
+        const ip = n.device === 'eth0' ? (net.gateway_info?.ip || '192.168.1.100') : (n.device === 'eth1' ? '192.168.1.101' : '--');
         return `
           <div class="nic-box">
             <div class="nic-head">
-              <span class="nic-name">${n.device.toUpperCase()} // LAN ${idx + 1}</span>
+              <span class="nic-name">${escapeHtml(n.device.toUpperCase())} // LAN ${idx + 1}</span>
               <span class="nic-speed" style="${isUp ? '' : 'color:var(--text-dim); background:rgba(255,255,255,0.05);'}">${isUp ? '1000 Mbps Full' : 'Disconnected'}</span>
             </div>
-            <div class="nic-detail">IP: <strong style="color:var(--text);">${ip}</strong></div>
+            <div class="nic-detail">IP: <strong style="color:var(--text);">${escapeHtml(ip)}</strong></div>
             <div class="nic-detail">RX: ${fmtSpeed(n.rx)} · TX: ${fmtSpeed(n.tx)}</div>
           </div>
         `;
@@ -1975,26 +1984,25 @@
     const connBody = document.getElementById('conn-table-body');
     if (connBody) {
       const items = conn.items || [
-        { who: 'admin', protocol: 'HTTP/HTTPS', from: '10.0.0.23', time: 'Active', descr: 'DiskStation Manager' },
-        { who: 'rbaronia', protocol: 'HTTP/HTTPS', from: '10.0.0.23', time: 'Active', descr: 'DiskStation Manager' },
-        { who: 'aqara-balcony', protocol: 'SMB3', from: '10.0.0.30', time: 'Streaming', descr: 'Surveillance' },
-        { who: 'rbaronia', protocol: 'HTTP/HTTPS', from: '10.0.0.39', time: 'Syncing', descr: 'Synology Drive' }
+        { who: 'dsm-admin', protocol: 'HTTP/HTTPS', from: '192.168.1.25', time: 'Active', descr: 'DiskStation Manager' },
+        { who: 'backup-user', protocol: 'SMB3', from: '192.168.1.30', time: 'Streaming', descr: 'Time Machine' },
+        { who: 'media-client', protocol: 'HTTP/HTTPS', from: '192.168.1.40', time: 'Syncing', descr: 'Synology Drive' }
       ];
 
-      const filtered = items.filter(c => !currentSearchQuery || 
-        (c.who && c.who.toLowerCase().includes(currentSearchQuery.toLowerCase())) ||
-        (c.from && c.from.toLowerCase().includes(currentSearchQuery.toLowerCase())) ||
-        (c.protocol && c.protocol.toLowerCase().includes(currentSearchQuery.toLowerCase()))
+      const filtered = items.filter(c => !currentSearchQuery ||
+        (c.who && String(c.who).toLowerCase().includes(currentSearchQuery.toLowerCase())) ||
+        (c.from && String(c.from).toLowerCase().includes(currentSearchQuery.toLowerCase())) ||
+        (c.protocol && String(c.protocol).toLowerCase().includes(currentSearchQuery.toLowerCase()))
       );
 
       setText('conn-count-badge', `${items.length} Active Sessions`);
       connBody.innerHTML = filtered.map(c => `
         <tr>
-          <td><strong style="color:var(--cyan);">${c.who || 'user'}</strong></td>
-          <td><span style="background:rgba(0,242,254,0.12); padding:2px 6px; border-radius:4px; color:var(--cyan); font-weight:600;">${c.protocol || c.type || 'HTTP'}</span></td>
-          <td>${c.from || '10.0.0.1'}</td>
-          <td>${c.time || 'Active'}</td>
-          <td style="color:var(--text-muted);">${c.descr || c.desc || 'DSM Service'}</td>
+          <td><strong style="color:var(--cyan);">${escapeHtml(c.who || 'user')}</strong></td>
+          <td><span style="background:rgba(0,242,254,0.12); padding:2px 6px; border-radius:4px; color:var(--cyan); font-weight:600;">${escapeHtml(c.protocol || c.type || 'HTTP')}</span></td>
+          <td>${escapeHtml(c.from || '192.168.1.1')}</td>
+          <td>${escapeHtml(c.time || 'Active')}</td>
+          <td style="color:var(--text-muted);">${escapeHtml(c.descr || c.desc || 'DSM Service')}</td>
         </tr>
       `).join('');
     }
@@ -2033,11 +2041,11 @@
       if (topProcs.length) {
         procBody.innerHTML = topProcs.map(p => `
           <tr>
-            <td><strong style="color:#f1f5f9;">${p.service}</strong></td>
-            <td style="color:var(--cyan);">${p.procName}</td>
-            <td style="color:var(--text-dim);">${p.pid}</td>
-            <td style="color:var(--emerald); font-weight:600;">${p.cpu}%</td>
-            <td style="color:var(--purple); font-weight:600;">${p.mem}</td>
+            <td><strong style="color:#f1f5f9;">${escapeHtml(p.service)}</strong></td>
+            <td style="color:var(--cyan);">${escapeHtml(p.procName)}</td>
+            <td style="color:var(--text-dim);">${escapeHtml(p.pid)}</td>
+            <td style="color:var(--emerald); font-weight:600;">${escapeHtml(p.cpu)}%</td>
+            <td style="color:var(--purple); font-weight:600;">${escapeHtml(p.mem)}</td>
           </tr>
         `).join('');
       }
@@ -2047,26 +2055,26 @@
     const logStreamEl = document.getElementById('log-stream');
     if (logStreamEl) {
       const logItems = logs.items || [
-        { level: 'info', who: 'rbaronia', time: '2026/10/25 22:45:16', descr: 'User [api-user] updated' },
-        { level: 'info', who: 'SYSTEM', time: '2026/10/25 20:21:00', descr: 'DDNS update succeeded [rbaronia.synology.me]' }
+        { level: 'info', who: 'dsm-admin', time: 'Recent', descr: 'User session authenticated' },
+        { level: 'info', who: 'SYSTEM', time: 'Recent', descr: 'DDNS heartbeat synchronized' }
       ];
 
       const errCount = logs.errorCount || 0;
       const warnCount = logs.warnCount || 0;
       setText('log-count-badge', `${errCount} Errors · ${warnCount} Warnings`);
 
-      const filtered = logItems.filter(l => !currentSearchQuery || 
-        (l.descr && l.descr.toLowerCase().includes(currentSearchQuery.toLowerCase())) ||
-        (l.who && l.who.toLowerCase().includes(currentSearchQuery.toLowerCase()))
+      const filtered = logItems.filter(l => !currentSearchQuery ||
+        (l.descr && String(l.descr).toLowerCase().includes(currentSearchQuery.toLowerCase())) ||
+        (l.who && String(l.who).toLowerCase().includes(currentSearchQuery.toLowerCase()))
       );
 
       logStreamEl.innerHTML = filtered.map(l => `
         <div class="log-item">
-          <span class="log-badge ${l.level || 'info'}">${l.level || 'INFO'}</span>
+          <span class="log-badge ${escapeHtml(l.level || 'info')}">${escapeHtml(l.level || 'INFO')}</span>
           <div class="log-msg">
-            <strong style="color:var(--cyan);">${l.who || 'SYSTEM'}:</strong> ${l.descr || l.message || ''}
+            <strong style="color:var(--cyan);">${escapeHtml(l.who || 'SYSTEM')}:</strong> ${escapeHtml(l.descr || l.message || '')}
           </div>
-          <div class="log-time">${l.time?.split(' ')?.[1] || l.time || ''}</div>
+          <div class="log-time">${escapeHtml(l.time?.split(' ')?.[1] || l.time || '')}</div>
         </div>
       `).join('');
     }
@@ -2446,14 +2454,14 @@
     const userTableBody = document.getElementById('sec-user-table-body');
     if (userTableBody) {
       const allUsers = users.length ? users : [
-        { name: 'admin' }, { name: 'api-user' }, { name: 'aqara' }, { name: 'guest' }, { name: 'rbaronia' }
+        { name: 'admin' }, { name: 'nas-user' }, { name: 'guest' }
       ];
       setText('sec-users-count-badge', `${allUsers.length} Local Users`);
 
-      const filteredUsers = allUsers.filter(u => !currentSearchQuery || u.name.toLowerCase().includes(currentSearchQuery.toLowerCase()));
+      const filteredUsers = allUsers.filter(u => !currentSearchQuery || String(u.name).toLowerCase().includes(currentSearchQuery.toLowerCase()));
 
       userTableBody.innerHTML = filteredUsers.map(u => {
-        const isAdmin = (u.name === 'admin' || u.name === 'rbaronia' || u.admin);
+        const isAdmin = (u.name === 'admin' || u.admin);
         const isDefaultAdmin = (u.name === 'admin');
         const isGuest = (u.name === 'guest');
         
@@ -2473,7 +2481,7 @@
 
         return `
           <tr>
-            <td><strong style="color:${isDefaultAdmin ? 'var(--rose)' : 'var(--cyan)'};">${u.name}</strong></td>
+            <td><strong style="color:${isDefaultAdmin ? 'var(--rose)' : 'var(--cyan)'};">${escapeHtml(u.name)}</strong></td>
             <td><span style="font-size:0.68rem; color:${isAdmin ? 'var(--amber)' : 'var(--text-muted)'};">${isAdmin ? 'DSM Admin' : 'Standard'}</span></td>
             <td>${statusBadge}</td>
             <td style="font-size:0.7rem;">${recText}</td>
@@ -2486,15 +2494,15 @@
     const certListEl = document.getElementById('sec-cert-list');
     if (certListEl) {
       const certItems = certs.length ? certs : [
-        { desc: 'Synology DDNS Let\'s Encrypt', subject: { common_name: 'rbaronia.synology.me' }, valid_until: 'Jan 12, 2027', is_default: true },
-        { desc: 'QuickConnect SSL', subject: { common_name: '*.rbaronia.direct.quickconnect.to' }, valid_until: 'Dec 03, 2026', is_default: false }
+        { desc: 'Synology DDNS Let\'s Encrypt', subject: { common_name: 'nas.synology.me' }, valid_until: '2027', is_default: true },
+        { desc: 'QuickConnect SSL', subject: { common_name: '*.direct.quickconnect.to' }, valid_until: '2026', is_default: false }
       ];
 
       certListEl.innerHTML = certItems.map(c => `
         <div style="background:var(--card-bg-subtle); border:1px solid var(--border); border-radius:6px; padding:7px 10px; display:flex; justify-content:space-between; align-items:center;">
           <div>
-            <div style="font-size:0.75rem; font-weight:600; color:var(--text);">${c.subject?.common_name || c.desc || 'SSL Cert'}</div>
-            <div style="font-size:0.65rem; color:var(--text-dim); font-family:var(--mono);">Expires: ${c.valid_until || '2027'}</div>
+            <div style="font-size:0.75rem; font-weight:600; color:var(--text);">${escapeHtml(c.subject?.common_name || c.desc || 'SSL Cert')}</div>
+            <div style="font-size:0.65rem; color:var(--text-dim); font-family:var(--mono);">Expires: ${escapeHtml(c.valid_until || '2027')}</div>
           </div>
           <span class="sec-badge safe">${c.is_default ? 'DEFAULT' : 'ACTIVE'}</span>
         </div>
@@ -2504,17 +2512,17 @@
     const shareEncGrid = document.getElementById('sec-share-encryption-grid');
     if (shareEncGrid) {
       const shareList = shares.length ? shares : [
-        { name: 'backup-ssd', encryption: 0 },
+        { name: 'backups', encryption: 0 },
         { name: 'homes', encryption: 0 },
         { name: 'surveillance', encryption: 0 },
-        { name: 'protected_data', encryption: 0 }
+        { name: 'data', encryption: 0 }
       ];
 
       shareEncGrid.innerHTML = shareList.map(s => {
         const isEnc = Boolean(s.encryption && s.encryption !== '0');
         return `
           <div class="share-card" style="border-color:${isEnc ? 'rgba(16,185,129,0.3)' : 'var(--border)'};">
-            <span class="share-name" title="${s.name}">${isEnc ? '🔒' : '🔓'} ${s.name}</span>
+            <span class="share-name" title="${escapeHtml(s.name)}">${isEnc ? '🔒' : '🔓'} ${escapeHtml(s.name)}</span>
             <span class="sec-badge ${isEnc ? 'safe' : 'warn'}" style="font-size:0.58rem;">${isEnc ? 'AES-256' : 'PLAINTEXT'}</span>
           </div>
         `;

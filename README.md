@@ -57,7 +57,7 @@ A real-time, high-density telemetry dashboard and security hardening advisor for
 3. **Configure Environment Variables**:
    Create a `.env` file in the root directory:
    ```env
-   NAS_HOST=10.0.0.91        # IP or hostname of your Synology NAS
+   NAS_HOST=192.168.1.100    # IP or hostname of your Synology NAS
    NAS_PORT=5001             # DSM HTTPS port (5001) or HTTP (5000)
    NAS_USER=your_dsm_user    # DSM user account
    NAS_PASS=your_dsm_pass    # DSM user password
@@ -86,7 +86,7 @@ A real-time, high-density telemetry dashboard and security hardening advisor for
    docker run -d \
      --name synology-dashboard \
      -p 8000:8000 \
-     -e NAS_HOST=10.0.0.91 \
+     -e NAS_HOST=192.168.1.100 \
      -e NAS_PORT=5001 \
      -e NAS_USER=admin \
      -e NAS_PASS=your_password \
