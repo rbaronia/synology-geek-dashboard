@@ -885,6 +885,50 @@
       50% { box-shadow: 0 0 8px 2px rgba(244, 63, 94, 0.3); }
     }
 
+    /* Privacy & Redaction Mode */
+    .sensitive-data,
+    .privacy-mask,
+    .ip-mask,
+    .user-mask {
+      display: inline-block;
+      transition: filter 0.22s cubic-bezier(0.4, 0, 0.2, 1), background 0.2s ease;
+    }
+
+    body.privacy-mode .sensitive-data,
+    body.privacy-mode .privacy-mask,
+    body.privacy-mode .ip-mask,
+    body.privacy-mode .user-mask,
+    body.privacy-mode #nas-host,
+    body.privacy-mode #qc-badge,
+    body.privacy-mode #ddns-badge,
+    body.privacy-mode #wan-ip {
+      filter: blur(6px) grayscale(20%);
+      user-select: none;
+      -webkit-user-select: none;
+      cursor: pointer;
+    }
+
+    body.privacy-mode .sensitive-data:hover,
+    body.privacy-mode .privacy-mask:hover,
+    body.privacy-mode .ip-mask:hover,
+    body.privacy-mode .user-mask:hover,
+    body.privacy-mode #nas-host:hover,
+    body.privacy-mode #qc-badge:hover,
+    body.privacy-mode #ddns-badge:hover,
+    body.privacy-mode #wan-ip:hover {
+      filter: blur(0px) !important;
+      background: rgba(0, 242, 254, 0.15);
+      border-radius: 4px;
+      padding: 0 3px;
+    }
+
+    .hud-btn.privacy-active {
+      background: rgba(16, 185, 129, 0.22) !important;
+      border-color: rgba(16, 185, 129, 0.6) !important;
+      color: var(--emerald) !important;
+      box-shadow: 0 0 10px rgba(16, 185, 129, 0.3);
+    }
+
     /* Modal for S.M.A.R.T Details */
     .modal-overlay {
       position: fixed;
@@ -1207,13 +1251,13 @@
           <span class="version-tag" id="app-version" title="App Version">{{ app_version | default('v1.2.0') }}</span>
         </h1>
         <div class="brand-meta">
-          <span id="nas-host">192.168.1.100:5001</span>
+          <span id="nas-host" class="sensitive-data">192.168.1.100:5001</span>
           <span class="dot">/</span>
           <span id="dsm-version">DSM 7.3.2 Update 5</span>
           <span class="dot">/</span>
-          <span id="qc-badge" style="color:var(--cyan);">quickconnect.to/synology-nas</span>
+          <span id="qc-badge" class="sensitive-data" style="color:var(--cyan);">quickconnect.to/synology-nas</span>
           <span class="dot">/</span>
-          <span id="ddns-badge" style="color:var(--emerald);">nas.synology.me</span>
+          <span id="ddns-badge" class="sensitive-data" style="color:var(--emerald);">nas.synology.me</span>
         </div>
       </div>
     </div>
@@ -1255,6 +1299,11 @@
         <option value="amber">Amber Synthwave</option>
         <option value="crimson">Crimson Alert</option>
       </select>
+
+      <button class="hud-btn" id="btn-privacy" title="Toggle Privacy & Redaction Mode (Shortcut: P)">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" id="privacy-icon"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+        <span id="privacy-btn-label">PRIVACY</span>
+      </button>
 
       <button class="hud-btn" id="btn-sync" title="Instant Refresh">
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/></svg>
@@ -2278,7 +2327,7 @@
               <span class="nic-name">${escapeHtml(n.device.toUpperCase())} // LAN ${idx + 1}</span>
               <span class="nic-speed" style="${isUp ? '' : 'color:var(--text-dim); background:rgba(255,255,255,0.05);'}">${isUp ? '1000 Mbps Full' : 'Disconnected'}</span>
             </div>
-            <div class="nic-detail">IP: <strong style="color:var(--text);">${escapeHtml(ip)}</strong></div>
+            <div class="nic-detail">IP: <strong style="color:var(--text);" class="sensitive-data">${escapeHtml(ip)}</strong></div>
             <div class="nic-detail">RX: ${fmtSpeed(n.rx)} · TX: ${fmtSpeed(n.tx)}</div>
           </div>
         `;
@@ -2303,9 +2352,9 @@
       setText('conn-count-badge', `${items.length} Active Sessions`);
       connBody.innerHTML = filtered.map(c => `
         <tr>
-          <td><strong style="color:var(--cyan);">${escapeHtml(c.who || 'user')}</strong></td>
+          <td><strong style="color:var(--cyan);" class="sensitive-data">${escapeHtml(c.who || 'user')}</strong></td>
           <td><span style="background:rgba(0,242,254,0.12); padding:2px 6px; border-radius:4px; color:var(--cyan); font-weight:600;">${escapeHtml(c.protocol || c.type || 'HTTP')}</span></td>
-          <td>${escapeHtml(c.from || '192.168.1.1')}</td>
+          <td><span class="sensitive-data">${escapeHtml(c.from || '192.168.1.1')}</span></td>
           <td>${escapeHtml(c.time || 'Active')}</td>
           <td style="color:var(--text-muted);">${escapeHtml(c.descr || c.desc || 'DSM Service')}</td>
         </tr>
@@ -2377,7 +2426,7 @@
         <div class="log-item">
           <span class="log-badge ${escapeHtml(l.level || 'info')}">${escapeHtml(l.level || 'INFO')}</span>
           <div class="log-msg">
-            <strong style="color:var(--cyan);">${escapeHtml(l.who || 'SYSTEM')}:</strong> ${escapeHtml(l.descr || l.message || '')}
+            <strong style="color:var(--cyan);" class="sensitive-data">${escapeHtml(l.who || 'SYSTEM')}:</strong> <span class="${l.who && l.who !== 'SYSTEM' ? 'sensitive-data' : ''}">${escapeHtml(l.descr || l.message || '')}</span>
           </div>
           <div class="log-time">${escapeHtml(l.time?.split(' ')?.[1] || l.time || '')}</div>
         </div>
@@ -2786,7 +2835,7 @@
 
         return `
           <tr>
-            <td><strong style="color:${isDefaultAdmin ? 'var(--rose)' : 'var(--cyan)'};">${escapeHtml(u.name)}</strong></td>
+            <td><strong style="color:${isDefaultAdmin ? 'var(--rose)' : 'var(--cyan)'};" class="sensitive-data">${escapeHtml(u.name)}</strong></td>
             <td><span style="font-size:0.68rem; color:${isAdmin ? 'var(--amber)' : 'var(--text-muted)'};">${isAdmin ? 'DSM Admin' : 'Standard'}</span></td>
             <td>${statusBadge}</td>
             <td style="font-size:0.7rem;">${recText}</td>
@@ -2806,7 +2855,7 @@
       certListEl.innerHTML = certItems.map(c => `
         <div style="background:var(--card-bg-subtle); border:1px solid var(--border); border-radius:6px; padding:7px 10px; display:flex; justify-content:space-between; align-items:center;">
           <div>
-            <div style="font-size:0.75rem; font-weight:600; color:var(--text);">${escapeHtml(c.subject?.common_name || c.desc || 'SSL Cert')}</div>
+            <div class="sensitive-data" style="font-size:0.75rem; font-weight:600; color:var(--text);">${escapeHtml(c.subject?.common_name || c.desc || 'SSL Cert')}</div>
             <div style="font-size:0.65rem; color:var(--text-dim); font-family:var(--mono);">Expires: ${escapeHtml(c.valid_until || '2027')}</div>
           </div>
           <span class="sec-badge safe">${c.is_default ? 'DEFAULT' : 'ACTIVE'}</span>
@@ -2852,7 +2901,7 @@
       <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-bottom:12px;">
         <div><strong>Vendor:</strong> ${disk.vendor || 'Seagate'}</div>
         <div><strong>Model:</strong> ${disk.model || 'IronWolf'}</div>
-        <div><strong>Serial:</strong> ${disk.serial || 'ZS513...'}</div>
+        <div><strong>Serial:</strong> <span class="sensitive-data">${escapeHtml(disk.serial || 'ZS513...')}</span></div>
         <div><strong>Capacity:</strong> ${fmtBytes(disk.size_total)}</div>
         <div><strong>Temperature:</strong> <span style="color:var(--emerald); font-weight:700;">${disk.temp || 48}°C</span></div>
         <div><strong>Interface:</strong> ${disk.diskType || 'SATA 6Gb/s'}</div>
@@ -3006,6 +3055,55 @@
         if (e.target === modal) modal.style.display = 'none';
       });
     }
+
+    // Privacy & Redaction Mode Engine
+    let isPrivacyMode = localStorage.getItem('synology_privacy_mode') === '1';
+
+    function setPrivacyMode(active) {
+      isPrivacyMode = active;
+      localStorage.setItem('synology_privacy_mode', active ? '1' : '0');
+      if (active) {
+        document.body.classList.add('privacy-mode');
+      } else {
+        document.body.classList.remove('privacy-mode');
+      }
+      const pBtn = document.getElementById('btn-privacy');
+      const pLabel = document.getElementById('privacy-btn-label');
+      const pIcon = document.getElementById('privacy-icon');
+      if (pBtn) {
+        if (active) {
+          pBtn.classList.add('privacy-active');
+          if (pLabel) pLabel.textContent = 'MASKED';
+          if (pIcon) {
+            pIcon.innerHTML = '<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line>';
+          }
+        } else {
+          pBtn.classList.remove('privacy-active');
+          if (pLabel) pLabel.textContent = 'PRIVACY';
+          if (pIcon) {
+            pIcon.innerHTML = '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle>';
+          }
+        }
+      }
+    }
+
+    // Apply stored privacy state on initial load
+    setPrivacyMode(isPrivacyMode);
+
+    const privacyBtn = document.getElementById('btn-privacy');
+    if (privacyBtn) {
+      privacyBtn.addEventListener('click', () => {
+        setPrivacyMode(!isPrivacyMode);
+      });
+    }
+
+    // Keyboard shortcut: Press 'P' to toggle privacy mode
+    window.addEventListener('keydown', (e) => {
+      if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT') return;
+      if (e.key === 'p' || e.key === 'P') {
+        setPrivacyMode(!isPrivacyMode);
+      }
+    });
 
     // Sync button
     const syncBtn = document.getElementById('btn-sync');
