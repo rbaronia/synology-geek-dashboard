@@ -13,6 +13,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
 from synology_client import SynologyClient
+from version import get_static_meta, fetch_github_release_info
 
 load_dotenv()
 
@@ -55,6 +56,11 @@ async def add_security_headers(request: Request, call_next):
     response.headers["X-Frame-Options"] = "DENY"
     response.headers["X-XSS-Protection"] = "1; mode=block"
     response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+    # Prevent browser caching of dashboard HTML and dynamic API data
+    if request.url.path == "/" or request.url.path.startswith("/api/"):
+        response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+        response.headers["Pragma"] = "no-cache"
+        response.headers["Expires"] = "0"
     return response
 
 
@@ -69,7 +75,20 @@ def get_client() -> SynologyClient:
 # ------------------------------------------------------------------
 @app.get("/", response_class=HTMLResponse)
 async def dashboard(request: Request):
-    return templates.TemplateResponse(request, "dashboard.html")
+    meta = get_static_meta()
+    return templates.TemplateResponse(
+        request,
+        "dashboard.html",
+        {
+            "dashboard_meta": meta,
+            "app_version": meta["version"],
+        },
+    )
+
+
+@app.get("/api/version")
+async def api_version() -> dict[str, Any]:
+    return await fetch_github_release_info()
 
 
 # ------------------------------------------------------------------
@@ -99,8 +118,11 @@ async def api_all() -> dict[str, Any]:
         ups,
         security_scan,
         autoblock,
+        autoblock_rules,
         ftp,
         users,
+        web_config,
+        password_policy,
     ) = await asyncio.gather(
         client.get_system_info(),
         client.get_system_status(),
@@ -121,15 +143,21 @@ async def api_all() -> dict[str, Any]:
         client.get_ups(),
         client.get_security_scan(),
         client.get_security_autoblock(),
+        client.get_autoblock_rules(),
         client.get_ftp(),
         client.get_users(),
+        client.get_dsm_web_config(),
+        client.get_password_policy(),
         return_exceptions=True,
     )
 
     def unpack(res: Any) -> Any:
         return res if not isinstance(res, Exception) else {"error": str(res)}
 
+    dashboard_meta = await fetch_github_release_info()
     return {
+        "app_version": dashboard_meta["version"],
+        "dashboard_meta": dashboard_meta,
         "host_info": {
             "host": NAS_HOST,
             "port": NAS_PORT,
@@ -155,8 +183,11 @@ async def api_all() -> dict[str, Any]:
         "ups": unpack(ups),
         "security_scan": unpack(security_scan),
         "autoblock": unpack(autoblock),
+        "autoblock_rules": unpack(autoblock_rules),
         "ftp": unpack(ftp),
         "users": unpack(users),
+        "web_config": unpack(web_config),
+        "password_policy": unpack(password_policy),
     }
 
 
@@ -202,19 +233,25 @@ async def api_security() -> dict[str, Any]:
     (
         sec_scan,
         autoblock,
+        autoblock_rules,
         ftp,
         users,
         certs,
         shares,
         smb,
+        web_config,
+        password_policy,
     ) = await asyncio.gather(
         client.get_security_scan(),
         client.get_security_autoblock(),
+        client.get_autoblock_rules(),
         client.get_ftp(),
         client.get_users(),
         client.get_certificates(),
         client.get_shares(),
         client.get_smb(),
+        client.get_dsm_web_config(),
+        client.get_password_policy(),
         return_exceptions=True,
     )
 
@@ -224,11 +261,14 @@ async def api_security() -> dict[str, Any]:
     return {
         "security_scan": unpack(sec_scan),
         "autoblock": unpack(autoblock),
+        "autoblock_rules": unpack(autoblock_rules),
         "ftp": unpack(ftp),
         "users": unpack(users),
         "certificates": unpack(certs),
         "shares": unpack(shares),
         "smb": unpack(smb),
+        "web_config": unpack(web_config),
+        "password_policy": unpack(password_policy),
     }
 
 

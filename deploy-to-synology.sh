@@ -29,6 +29,7 @@ rsync -avz -e "ssh -p $SSH_PORT" \
   --exclude='.venv' \
   --exclude='__pycache__' \
   --exclude='.git' \
+  --exclude='.env' \
   ./ "${SSH_USER}@${NAS_TARGET}:${REMOTE_DIR}/"
 
 echo "🚀 [3/3] Building and starting container in background..."

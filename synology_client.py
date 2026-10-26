@@ -299,6 +299,31 @@ class SynologyClient:
             "limit": 100,
         }, default={})
 
+    async def get_autoblock_rules(self) -> dict[str, Any]:
+        """Fetch banned / blocked IP addresses list from Auto-Block blacklist."""
+        return await self._safe_get({
+            "api": "SYNO.Core.Security.AutoBlock.Rules",
+            "version": "1",
+            "method": "list",
+            "limit": 100,
+        }, default={})
+
+    async def get_dsm_web_config(self) -> dict[str, Any]:
+        """Fetch DSM Web/HTTPS redirection and security headers configuration."""
+        return await self._safe_get({
+            "api": "SYNO.Core.Web.DSM",
+            "version": "1",
+            "method": "get",
+        }, default={})
+
+    async def get_password_policy(self) -> dict[str, Any]:
+        """Fetch DSM password complexity, expiration, and lockout policy."""
+        return await self._safe_get({
+            "api": "SYNO.Core.User.PasswordPolicy",
+            "version": "1",
+            "method": "get",
+        }, default={})
+
     async def aclose(self) -> None:
         """Close HTTP client session."""
         await self._client.aclose()
