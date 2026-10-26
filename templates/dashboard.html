@@ -2673,6 +2673,23 @@
       });
     }
 
+    // Auto-Pause Polling when Browser Tab is Inactive / Minimized
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden) {
+        if (refreshTimer) {
+          clearInterval(refreshTimer);
+          refreshTimer = null;
+        }
+      } else {
+        const rateSelect = document.getElementById('refresh-rate-select');
+        const ms = rateSelect ? Number(rateSelect.value) : 2000;
+        if (ms > 0) {
+          fetchTelemetry();
+          startPolling(ms);
+        }
+      }
+    });
+
     // Modal Close
     const modal = document.getElementById('drive-modal');
     const modalClose = document.getElementById('modal-close-btn');
